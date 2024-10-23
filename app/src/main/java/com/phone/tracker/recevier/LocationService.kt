@@ -74,11 +74,11 @@ class LocationService : Service() {
                     )
                     updateNotification(location.latitude, location.longitude)
 
-                    preferencesManager.saveLocation(location.latitude,location.longitude)
+                    preferencesManager.saveLocation(location.latitude, location.longitude)
 
+                    Log.d("SAVE","onLocationResult: code ----> " + preferencesManager.getLongitude())
 
-                    Log.d("SAVE", "onLocationResult: code ----> "+preferencesManager.getLongitude())
-                    if (preferencesManager.getLongitude()!=0.0){
+                    if (preferencesManager.getLongitude() != 0.0 && !preferencesManager.userIdGet().isNullOrEmpty()) {
                         //save on server
                         uploadLocationToServer(location.latitude, location.longitude)
                     }
@@ -88,15 +88,21 @@ class LocationService : Service() {
     }
 
     private fun uploadLocationToServer(latitude: Double, longitude: Double) {
+        val checkInId = preferencesManager.getCheckIn()
+        val userId = preferencesManager.userIdGet()
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                val response = apiService.uploadLocation(
-                    checkInId = 32,
-                    latitude,
-                    "NSP",
-                    longitude,
-                    "4"
-                )
+                if (!checkInId.isNullOrBlank() && !userId.isNullOrBlank()) {
+                    val response = apiService.uploadLocation(
+                        checkInId = checkInId.toLong(),
+                        latitude,
+                        "NSP",
+                        longitude,
+                        userId.toLong()
+                    )
+                }else{
+                    Log.e("FATAL ERROR ", "uploadLocationToServer: checkInId $checkInId userId$userId")
+                }
             } catch (e: Exception) {
                 Log.e("LocationService", "Error uploading location", e)
             }
@@ -128,7 +134,7 @@ class LocationService : Service() {
                             intent.putExtra("longitude", location.longitude)
                             sendBroadcast(intent)
 
-                            preferencesManager.saveLocation(location.latitude,location.longitude)
+                            preferencesManager.saveLocation(location.latitude, location.longitude)
                             Log.d(
                                 "LocationService",
                                 "Forced Update - Latitude: ${location.latitude}, Longitude: ${location.longitude}"
@@ -251,7 +257,7 @@ class LocationService : Service() {
     }
 
     private fun stopLocationUpdates() {
-        preferencesManager.saveLocation(0.0,0.0)
+        preferencesManager.saveLocation(0.0, 0.0)
         fusedLocationClient.removeLocationUpdates(locationCallback)
     }
 

@@ -1,11 +1,9 @@
 package com.phone.tracker.ui.home
 
 import android.util.Log
-import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.phone.tracker.data.api.model.AttendanceResposeModel
-import com.phone.tracker.data.api.model.Character
 import com.phone.tracker.data.api.model.CheckInResposeModel
 import com.phone.tracker.data.api.model.CheckOutREsposeModel
 import com.phone.tracker.data.api.model.LoginResposeModel
@@ -32,6 +30,7 @@ class MainViewModel @Inject constructor(
 
     init {
         _tracking.value = preferencesManager.trackingStatus()
+        preferencesManager.userIdGet()
     }
 
     fun trackingOnOff(){
@@ -64,6 +63,7 @@ class MainViewModel @Inject constructor(
             try {
                 val response = mainRepository.checkInApi(userId, latitude, longitude, location)
                 _checkInState.value = response
+                preferencesManager.saveCheckIn(response.checkIn.first().checkInId)
             } catch (e: Exception) {
                 Log.d("TAG", "login: error" + e.message)
             }
@@ -74,10 +74,10 @@ class MainViewModel @Inject constructor(
     val checkOutState: StateFlow<CheckOutREsposeModel> get() = _checkOutState
 
     fun checkOut(
-        userId: String,
-        checkInId: String,
-        latitude: String,
-        longitude: String,
+        userId: Long,
+        checkInId: Long,
+        latitude: Long,
+        longitude: Long,
         location: String,
         distance: String,
     ) {
@@ -93,7 +93,7 @@ class MainViewModel @Inject constructor(
                 )
                 _checkOutState.value = response
             } catch (e: Exception) {
-                Log.d("TAG", "login: error" + e.message)
+                Log.d("TAG", "login: error checkout api error" + e.message)
             }
         }
     }

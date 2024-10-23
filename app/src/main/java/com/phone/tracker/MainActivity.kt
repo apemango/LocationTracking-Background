@@ -1,6 +1,7 @@
 package com.phone.tracker
 
 import android.Manifest
+import android.app.Activity
 import android.app.AlertDialog
 import android.content.BroadcastReceiver
 import android.content.Context
@@ -21,12 +22,14 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.phone.tracker.data.local.PreferencesManager
 import com.phone.tracker.recevier.LocationService
+import com.phone.tracker.ui.AttendanceiHistory
 import com.phone.tracker.ui.home.HomeScreen
 import com.phone.tracker.ui.home.MainViewModel
 import com.phone.tracker.ui.theme.PotterComposeTheme
@@ -36,7 +39,9 @@ import javax.inject.Inject
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     private lateinit var requestPermissionLauncher: ActivityResultLauncher<String>
+
     private val mainViewModel: MainViewModel by viewModels()
+
     private lateinit var locationReceiver: BroadcastReceiver
 
     @Inject
@@ -81,8 +86,6 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             PotterComposeTheme {
-
-
                 val checkInState by mainViewModel.checkInState.collectAsState() // Collect state from the ViewModel
                 val checkOutState by mainViewModel.checkOutState.collectAsState() // Collect state from the ViewModel
 
@@ -91,31 +94,42 @@ class MainActivity : ComponentActivity() {
 
                 var isCheckInOutState = rememberSaveable() { mutableStateOf(false) }
 
+                var checkInId = remember { mutableStateOf("") }
+                var userId = remember { mutableStateOf(preferencesManager.userIdGet()) }
                 var isReadyCheckInOut by rememberSaveable { mutableStateOf(mainViewModel.tracking.value) }
 
-                LaunchedEffect(updateLocation, checkInState, checkOutState,trackingState) {
+                val context = this
+                LaunchedEffect(updateLocation, checkInState, checkOutState, trackingState) {
 
                     isCheckInOutState.value = trackingState
 
+//                    Log.e("Checking details --> ", "onCreate: "+checkInState.checkIn.first().checkInId )
+
                     if (!checkInState.checkIn.isNullOrEmpty()) {
-                        Log.e("Checking details --> ", "onCreate: "+checkInState.checkIn.toString() )
+                        checkInId.value = checkInState.checkIn.first().checkInId
+                        userId.value = checkInState.checkIn.first().checkInId
                         preferencesManager.saveCheckIn(checkInState.checkIn.first().checkInId)
                     }
 
-                    if (checkOutState.checkOut != "checkout") {
+                    Log.e("TAG", "onCreate:  state of api "+checkOutState.status )
+                    if (checkOutState.status==1) {/*
                         preferencesManager.trackingStatus(false)
+                        mainViewModel.trackingOnOff()
+                        stopLocationService(context as Activity)*/
                     }
 
-                    isReadyCheckInOut =
-                        updateLocation.latitude != 0.0 && updateLocation.longitude != 0.0
+                    isReadyCheckInOut = updateLocation.latitude != 0.0 && updateLocation.longitude != 0.0
                 }
 
-                HomeScreen(
+
+                HomeScreen(preferencesManager,
+                    checkInState.checkIn,
+                    longitude = updateLocation.longitude, latitude = updateLocation.latitude,
                     context = this,
                     isCheckedIn = isCheckInOutState.value,
                     onCheckIn = {
                         checkLocationPermission()
-                        Log.e("TAG", "onCreate: status live --- > "+isCheckInOutState.value )
+                        Log.e("TAG", "onCreate: status live --- > " + isCheckInOutState.value)
                         if (isReadyCheckInOut && !isCheckInOutState.value) {
                             mainViewModel.checkIn(
                                 preferencesManager.userIdGet().toLong(),
@@ -134,12 +148,14 @@ class MainActivity : ComponentActivity() {
                     onCheckOut = {
                         if (isReadyCheckInOut) {
                             mainViewModel.checkOut(
-                                preferencesManager.userIdGet(),
-                                preferencesManager.getCheckIn(), updateLocation.latitude.toString(),
-                                updateLocation.longitude.toString(), "NSB", "23"
+                                preferencesManager.userIdGet().toLong(),
+                                preferencesManager.getCheckIn().toLong(), updateLocation.latitude.toLong(),
+                                updateLocation.longitude.toLong(), "NSB", "23"
                             )
-                            mainViewModel.trackingOnOff()
                             stopLocationService(this)
+                            preferencesManager.trackingStatus(false)
+                            mainViewModel.trackingOnOff()
+
                         } else {
                             Toast.makeText(
                                 this,
@@ -147,8 +163,8 @@ class MainActivity : ComponentActivity() {
                                 Toast.LENGTH_SHORT
                             ).show()
                         }
-
-
+                    }, showHistory = {
+                        this.startActivity(Intent(this, AttendanceiHistory::class.java))
                     }
                 )
             }

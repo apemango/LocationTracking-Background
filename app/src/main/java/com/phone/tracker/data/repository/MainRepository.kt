@@ -3,7 +3,6 @@ package com.phone.tracker.data.repository
 import android.util.Log
 import com.phone.tracker.data.api.ApiEndPoints
 import com.phone.tracker.data.api.model.AttendanceResposeModel
-import com.phone.tracker.data.api.model.Character
 import com.phone.tracker.data.api.model.CheckInResposeModel
 import com.phone.tracker.data.api.model.CheckOutREsposeModel
 import com.phone.tracker.data.api.model.LoginResposeModel
@@ -41,18 +40,19 @@ class MainRepository @Inject constructor(
 
 
     suspend fun checkoutApi(
-        userId: String,
-        checkInId: String,
-        latitude: String,
-        longitude: String,
+        userId: Long,
+        checkInId: Long,
+        latitude: Long,
+        longitude: Long,
         location: String,
         distance: String,
     ): CheckOutREsposeModel {
         return try {
-            apiEndPoints.checkOutApi(userId, checkInId, latitude, longitude, location, distance)
+            apiEndPoints.checkOutApi(userId,
+                checkInId, latitude, longitude, location, distance)
         } catch (e: HttpException) {
             // Handle login error
-            Log.e("MainRepository", "Login failed: ${e.message()}")
+            Log.e("MainRepository Checkout api --- >", "Login failed: ${e.message()}")
             throw e // Rethrow if you want to handle it higher up
         }
     }
@@ -61,7 +61,7 @@ class MainRepository @Inject constructor(
         userId: String
     ): AttendanceResposeModel {
         return try {
-            apiEndPoints.attendanceApi(userId)
+            apiEndPoints.attendanceApi(userId.toLong())
         } catch (e: HttpException) {
             // Handle login error
             Log.e("MainRepository", "Login failed: ${e.message()}")

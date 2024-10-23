@@ -21,11 +21,11 @@ interface ApiEndPoints {
     @Multipart
     @POST("/recib/wapi/locationTrack.php") // Replace with your actual endpoint
     suspend fun uploadLocation(
-        @Part("checkInId") checkInId: Int,
+        @Part("checkInId") checkInId: Long,
         @Part("latitude") latitude: Double,
         @Part("location") location: String,
         @Part("longitude") longitude: Double,
-        @Part("userId") userId: String
+        @Part("userId") userId: Long
     ): LocationTrackerResposeModel
 
 
@@ -49,10 +49,10 @@ interface ApiEndPoints {
     @Multipart
     @POST("/recib/wapi/checkOut.php") // Replace with your actual endpoint
     suspend fun checkOutApi(
-        @Part("userId") userId: String,
-        @Part("checkInId") checkInId: String,
-        @Part("latitude") latitude: String,
-        @Part("longitude") longitude: String,
+        @Part("userId") userId: Long,
+        @Part("checkInId") checkInId: Long,
+        @Part("latitude") latitude: Long,
+        @Part("longitude") longitude: Long,
         @Part("location") location: String,
         @Part("distance") distance: String,
     ): CheckOutREsposeModel
@@ -60,6 +60,6 @@ interface ApiEndPoints {
     @Multipart
     @POST("/recib/wapi/empAttendanceList.php") // Replace with your actual endpoint
     suspend fun attendanceApi(
-        @Part("userId") userId: String,
+        @Part("userId") userId: Long,
     ): AttendanceResposeModel
 }

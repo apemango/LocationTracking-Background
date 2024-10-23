@@ -18,13 +18,19 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.phone.tracker.R
+import com.phone.tracker.data.api.model.CheckIn
+import com.phone.tracker.data.local.PreferencesManager
 
 @Composable
 fun HomeScreen(
+    preferencesManager: PreferencesManager, checkInDetails: List<CheckIn>,
+    latitude: Double,
+    longitude: Double,
     context: Context,
     isCheckedIn: Boolean,
     onCheckIn: () -> Unit,
-    onCheckOut: () -> Unit
+    onCheckOut: () -> Unit,
+    showHistory: () -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -33,6 +39,12 @@ fun HomeScreen(
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
+        Button(onClick = {
+            showHistory.invoke()
+        }) {
+            Text("History ")
+
+        }
         // Profile Logo
         Image(
             painter = painterResource(id = R.drawable.ic_icon), // Replace with your logo resource
@@ -42,11 +54,24 @@ fun HomeScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
+
         // User Name
-        Text(text = "John Doe", fontSize = 24.sp)
+        Text(
+            text = "User Id " + preferencesManager.userIdGet(), fontSize = 24.sp
+        )
 
         // Phone Number
-        Text(text = "+1234567890", fontSize = 18.sp)
+        Text(
+            text = "Check Id " + if (!checkInDetails.isNullOrEmpty()) {
+                checkInDetails.first().checkInId
+            } else {
+                "Please retry "
+            }, fontSize = 18.sp
+        )
+
+        Spacer(modifier = Modifier.height(32.dp))
+        // Phone Number
+        Text(text = "Location > : $latitude , $longitude", fontSize = 18.sp)
 
         Spacer(modifier = Modifier.height(32.dp))
 
@@ -66,3 +91,5 @@ fun HomeScreen(
         }
     }
 }
+
+
