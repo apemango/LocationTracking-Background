@@ -1,7 +1,6 @@
 package com.phone.tracker.recevier
 
 import android.Manifest
-import android.app.Application
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -13,9 +12,9 @@ import android.os.Build
 import android.os.IBinder
 import android.os.Looper
 import android.util.Log
+import android.widget.RemoteViews
 import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
-import androidx.lifecycle.findViewTreeViewModelStoreOwner
 import com.phone.tracker.data.local.PreferencesManager
 //import com.example.myapplication.data.remote.RetrofitClient
 import com.google.android.gms.location.FusedLocationProviderClient
@@ -25,7 +24,6 @@ import com.google.android.gms.location.LocationResult
 import com.google.android.gms.location.LocationServices
 import com.phone.tracker.R
 import com.phone.tracker.data.api.ApiEndPoints
-import com.phone.tracker.ui.home.MainViewModel
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -76,9 +74,14 @@ class LocationService : Service() {
 
                     preferencesManager.saveLocation(location.latitude, location.longitude)
 
-                    Log.d("SAVE","onLocationResult: code ----> " + preferencesManager.getLongitude())
+                    Log.d(
+                        "SAVE",
+                        "onLocationResult: code ----> " + preferencesManager.getLongitude()
+                    )
 
-                    if (preferencesManager.getLongitude() != 0.0 && !preferencesManager.userIdGet().isNullOrEmpty()) {
+                    if (preferencesManager.getLongitude() != 0.0 && !preferencesManager.userIdGet()
+                            .isNullOrEmpty()
+                    ) {
                         //save on server
                         uploadLocationToServer(location.latitude, location.longitude)
                     }
@@ -100,8 +103,12 @@ class LocationService : Service() {
                         longitude,
                         userId.toLong()
                     )
-                }else{
-                    Log.e("FATAL ERROR ", "uploadLocationToServer: checkInId $checkInId userId$userId")
+                    updateNotificationApiResponse(response.locationTrack.first().toString())
+                } else {
+                    Log.e(
+                        "FATAL ERROR ",
+                        "uploadLocationToServer: checkInId $checkInId userId$userId"
+                    )
                 }
             } catch (e: Exception) {
                 Log.e("LocationService", "Error uploading location", e)
@@ -214,6 +221,15 @@ class LocationService : Service() {
 
         val manager = getSystemService(NotificationManager::class.java)
         manager.notify(1, notification)
+    }
+
+    private fun updateNotificationApiResponse(notification: String) {
+        val notificationText = "-> Saved Status \n $notification"
+        val notification = createNotification(notificationText)
+
+        val manager = getSystemService(NotificationManager::class.java)
+        manager.notify(1, notification)
+
     }
 
     private fun createNotification(contentText: String): Notification {
