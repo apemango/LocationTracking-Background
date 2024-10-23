@@ -152,9 +152,10 @@ class MainActivity : ComponentActivity() {
                                 preferencesManager.getCheckIn().toLong(), updateLocation.latitude.toLong(),
                                 updateLocation.longitude.toLong(), "NSB", "23"
                             )
-                            stopLocationService(this)
+
                             preferencesManager.trackingStatus(false)
                             mainViewModel.trackingOnOff()
+                            stopLocationService(this)
 
                         } else {
                             Toast.makeText(
