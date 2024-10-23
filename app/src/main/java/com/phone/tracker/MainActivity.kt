@@ -1,7 +1,6 @@
 package com.phone.tracker
 
 import android.Manifest
-import android.app.Activity
 import android.app.AlertDialog
 import android.content.BroadcastReceiver
 import android.content.Context
@@ -30,8 +29,10 @@ import androidx.core.content.ContextCompat
 import com.phone.tracker.data.local.PreferencesManager
 import com.phone.tracker.recevier.LocationService
 import com.phone.tracker.ui.AttendanceiHistory
+import com.phone.tracker.ui.componet.CircularProgressBar
 import com.phone.tracker.ui.home.HomeScreen
 import com.phone.tracker.ui.home.MainViewModel
+import com.phone.tracker.ui.login.LoginActivity
 import com.phone.tracker.ui.theme.PotterComposeTheme
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
@@ -86,6 +87,10 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             PotterComposeTheme {
+
+//                var isLoading by remember { mutableStateOf(false) }
+//                CircularProgressBar(isLoading = isLoading)
+
                 val checkInState by mainViewModel.checkInState.collectAsState() // Collect state from the ViewModel
                 val checkOutState by mainViewModel.checkOutState.collectAsState() // Collect state from the ViewModel
 
@@ -98,29 +103,30 @@ class MainActivity : ComponentActivity() {
                 var userId = remember { mutableStateOf(preferencesManager.userIdGet()) }
                 var isReadyCheckInOut by rememberSaveable { mutableStateOf(mainViewModel.tracking.value) }
 
-                val context = this
-                LaunchedEffect(updateLocation, checkInState, checkOutState, trackingState) {
+                LaunchedEffect(updateLocation, mainViewModel.checkInState.collectAsState(), checkOutState, trackingState) {
 
                     isCheckInOutState.value = trackingState
 
-//                    Log.e("Checking details --> ", "onCreate: "+checkInState.checkIn.first().checkInId )
+                    Log.e("Checking details --> ", "onCreate: "+checkInState.checkIn.toString() )
 
                     if (!checkInState.checkIn.isNullOrEmpty()) {
+
                         checkInId.value = checkInState.checkIn.first().checkInId
                         userId.value = checkInState.checkIn.first().checkInId
                         preferencesManager.saveCheckIn(checkInState.checkIn.first().checkInId)
+
+//                        isLoading = false
                     }
 
-                    Log.e("TAG", "onCreate:  state of api "+checkOutState.status )
-                    if (checkOutState.status==1) {/*
+                    if (checkOutState.status != 0) {
+//                        isLoading = !isLoading
                         preferencesManager.trackingStatus(false)
-                        mainViewModel.trackingOnOff()
-                        stopLocationService(context as Activity)*/
+
+//                        isLoading = false
                     }
 
                     isReadyCheckInOut = updateLocation.latitude != 0.0 && updateLocation.longitude != 0.0
                 }
-
 
                 HomeScreen(preferencesManager,
                     checkInState.checkIn,
@@ -137,6 +143,8 @@ class MainActivity : ComponentActivity() {
                                 updateLocation.longitude,
                                 "Delhi"
                             )
+//                            isLoading = false
+//                            isLoading = true
                         } else {
                             Toast.makeText(
                                 this,
@@ -147,16 +155,21 @@ class MainActivity : ComponentActivity() {
                     },
                     onCheckOut = {
                         if (isReadyCheckInOut) {
-                            mainViewModel.checkOut(
-                                preferencesManager.userIdGet().toLong(),
-                                preferencesManager.getCheckIn().toLong(), updateLocation.latitude.toLong(),
-                                updateLocation.longitude.toLong(), "NSB", "23"
-                            )
+                            try {
+                                mainViewModel.checkOut(
+                                    preferencesManager.userIdGet().toLong(),
+                                    preferencesManager.getCheckIn().toLong(),
+                                    updateLocation.latitude.toString().toLong(),
+                                    updateLocation.longitude.toString().toLong(), "NSB", "23"
+                                )
+//                                isLoading = false
+//                                isLoading = true
+                            }catch (e:Exception){
+                                Log.e("CHECK IN ERROR", " checkin error  "+e.message )
+                            }
 
-                            preferencesManager.trackingStatus(false)
                             mainViewModel.trackingOnOff()
                             stopLocationService(this)
-
                         } else {
                             Toast.makeText(
                                 this,
@@ -164,8 +177,11 @@ class MainActivity : ComponentActivity() {
                                 Toast.LENGTH_SHORT
                             ).show()
                         }
-                    }, showHistory = {
+                    },
+                    showHistory = {
                         this.startActivity(Intent(this, AttendanceiHistory::class.java))
+                    }, logout = {
+                        this.startActivity(Intent(this, LoginActivity::class.java))
                     }
                 )
             }

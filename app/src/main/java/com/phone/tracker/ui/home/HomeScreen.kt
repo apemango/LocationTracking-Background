@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
@@ -30,7 +31,8 @@ fun HomeScreen(
     isCheckedIn: Boolean,
     onCheckIn: () -> Unit,
     onCheckOut: () -> Unit,
-    showHistory: () -> Unit
+    showHistory: () -> Unit,
+    logout: () -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -39,18 +41,30 @@ fun HomeScreen(
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Button(onClick = {
-            showHistory.invoke()
-        }) {
-            Text("History ")
 
+        Row {
+
+            Button(onClick = {
+                showHistory.invoke()
+            }) {
+                Text("History ")
+            }
+
+            Button(onClick = {
+                logout.invoke()
+            }) {
+                Text("Logout")
+            }
         }
+
+
         // Profile Logo
         Image(
             painter = painterResource(id = R.drawable.ic_icon), // Replace with your logo resource
             contentDescription = "Profile Logo",
             modifier = Modifier.size(100.dp)
         )
+
 
         Spacer(modifier = Modifier.height(16.dp))
 

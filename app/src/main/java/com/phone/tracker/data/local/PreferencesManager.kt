@@ -18,6 +18,10 @@ class PreferencesManager(private val context: Context) {
         context.getSharedPreferences(context.packageName, Context.MODE_PRIVATE)
     }
 
+    fun clear(){
+        sharedPreferences.edit().clear()
+    }
+
     // Public method to edit preferences
     fun editPreference(action: (SharedPreferences.Editor) -> Unit) {
         val editor = sharedPreferences.edit()

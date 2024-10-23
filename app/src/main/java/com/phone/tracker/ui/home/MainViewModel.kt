@@ -65,7 +65,7 @@ class MainViewModel @Inject constructor(
                 _checkInState.value = response
                 preferencesManager.saveCheckIn(response.checkIn.first().checkInId)
             } catch (e: Exception) {
-                Log.d("TAG", "login: error" + e.message)
+                Log.d("TAG", "login: error " + e.message)
             }
         }
     }
@@ -120,6 +120,7 @@ class MainViewModel @Inject constructor(
 
     fun updateLocation(latitude: Double, longitude: Double) {
         _location.value = LocationData(latitude, longitude)
+        Log.e("SYNC DATA", "updateLocation   ---- > : "+longitude + " "+longitude )
     }
 
 }
