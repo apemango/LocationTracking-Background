@@ -51,8 +51,8 @@ interface ApiEndPoints {
     suspend fun checkOutApi(
         @Part("userId") userId: Long,
         @Part("checkInId") checkInId: Long,
-        @Part("latitude") latitude: Long,
-        @Part("longitude") longitude: Long,
+        @Part("latitude") latitude: Double,
+        @Part("longitude") longitude: Double,
         @Part("location") location: String,
         @Part("distance") distance: String,
     ): CheckOutREsposeModel

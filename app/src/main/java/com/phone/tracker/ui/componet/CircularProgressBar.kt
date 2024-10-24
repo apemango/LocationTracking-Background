@@ -15,44 +15,49 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
 import kotlinx.coroutines.delay
 
 @Composable
-fun CircularProgressBar(
-    isLoading: Boolean,
+fun Boolean.CircularProgressBar(
+    onDismissRequest: ()->Unit = {},
     modifier: Modifier = Modifier,
     strokeWidth: Float = 10f,
     backgroundColor: Color = Color.Transparent,
     progressColor: Color = MaterialTheme.colorScheme.primary
 ) {
-    var progress by remember { mutableStateOf(0f) }
+    if (this){
+        Dialog(onDismissRequest = {onDismissRequest.invoke()}) {
+            var progress by remember { mutableStateOf(0f) }
 
-    LaunchedEffect(isLoading) {
-        if (isLoading) {
-            while (true) { // Infinite loop for continuous progress
-                for (i in 0..100) {
-                    delay(30) // Adjust delay for speed of progress
-                    progress = i / 100f // Increment progress
+            LaunchedEffect(this) {
+                if (true) {
+                    while (true) { // Infinite loop for continuous progress
+                        for (i in 0..100) {
+                            delay(30) // Adjust delay for speed of progress
+                            progress = i / 100f // Increment progress
+                        }
+                    }
+                } else {
+                    progress = 0f // Reset progress when not loading
                 }
             }
-        } else {
-            progress = 0f // Reset progress when not loading
-        }
-    }
 
-    Box(modifier = modifier, contentAlignment = Alignment.Center) {
-        Canvas(modifier = Modifier.size(200.dp)) {
-            // Draw background circle
-            drawCircle(color = backgroundColor, radius = size.minDimension / 2)
+            Box(modifier = modifier, contentAlignment = Alignment.Center) {
+                Canvas(modifier = Modifier.size(200.dp)) {
+                    // Draw background circle
+                    drawCircle(color = backgroundColor, radius = size.minDimension / 2)
 
-            // Draw progress arc
-            drawArc(
-                color = progressColor,
-                startAngle = -90f,
-                sweepAngle = 360 * progress,
-                useCenter = false,
-                style = Stroke(width = strokeWidth)
-            )
+                    // Draw progress arc
+                    drawArc(
+                        color = progressColor,
+                        startAngle = -90f,
+                        sweepAngle = 360 * progress,
+                        useCenter = false,
+                        style = Stroke(width = strokeWidth)
+                    )
+                }
+            }
         }
     }
 }

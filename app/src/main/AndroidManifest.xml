@@ -39,6 +39,8 @@
 
         <service
             android:name="com.phone.tracker.recevier.LocationService"
+            android:enabled="true"
+            android:exported="false"
             android:foregroundServiceType="location" />
     </application>
 

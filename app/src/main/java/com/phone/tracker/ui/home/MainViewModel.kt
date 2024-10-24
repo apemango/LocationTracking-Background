@@ -76,8 +76,8 @@ class MainViewModel @Inject constructor(
     fun checkOut(
         userId: Long,
         checkInId: Long,
-        latitude: Long,
-        longitude: Long,
+        latitude: String,
+        longitude: String,
         location: String,
         distance: String,
     ) {
@@ -86,8 +86,8 @@ class MainViewModel @Inject constructor(
                 val response = mainRepository.checkoutApi(
                     userId,
                     checkInId,
-                    latitude,
-                    longitude,
+                    latitude.toDouble(),
+                    longitude.toDouble(),
                     location,
                     distance
                 )

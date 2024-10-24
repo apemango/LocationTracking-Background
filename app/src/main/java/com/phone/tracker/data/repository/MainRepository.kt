@@ -42,8 +42,8 @@ class MainRepository @Inject constructor(
     suspend fun checkoutApi(
         userId: Long,
         checkInId: Long,
-        latitude: Long,
-        longitude: Long,
+        latitude: Double,
+        longitude: Double,
         location: String,
         distance: String,
     ): CheckOutREsposeModel {
