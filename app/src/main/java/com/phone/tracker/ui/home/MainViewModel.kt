@@ -28,14 +28,22 @@ class MainViewModel @Inject constructor(
     private val _tracking = MutableStateFlow(false)
     val tracking: StateFlow<Boolean> get() = _tracking
 
+    private val _isLoading = MutableStateFlow(false)
+    val isLoading: StateFlow<Boolean> get() = _isLoading
+
     init {
         _tracking.value = preferencesManager.trackingStatus()
+        _isLoading.value = false
         preferencesManager.userIdGet()
     }
 
-    fun trackingOnOff(){
+    fun trackingOnOff(state: Boolean? = null) {
         val currentStatus = preferencesManager.trackingStatus()
-        _tracking.value = preferencesManager.trackingStatus(!currentStatus)
+        if (state != null) {
+            _tracking.value = preferencesManager.trackingStatus(state)
+        } else {
+            _tracking.value = preferencesManager.trackingStatus(currentStatus)
+        }
     }
 
 
@@ -59,11 +67,13 @@ class MainViewModel @Inject constructor(
         longitude: Double,
         location: String
     ) {
+        _isLoading.value = true
         viewModelScope.launch {
             try {
                 val response = mainRepository.checkInApi(userId, latitude, longitude, location)
                 _checkInState.value = response
                 preferencesManager.saveCheckIn(response.checkIn.first().checkInId)
+                _isLoading.value = false
             } catch (e: Exception) {
                 Log.d("TAG", "login: error " + e.message)
             }
@@ -81,6 +91,7 @@ class MainViewModel @Inject constructor(
         location: String,
         distance: String,
     ) {
+        _isLoading.value = true
         viewModelScope.launch {
             try {
                 val response = mainRepository.checkoutApi(
@@ -92,6 +103,7 @@ class MainViewModel @Inject constructor(
                     distance
                 )
                 _checkOutState.value = response
+                _isLoading.value = false
             } catch (e: Exception) {
                 Log.d("TAG", "login: error checkout api error" + e.message)
             }
@@ -120,7 +132,7 @@ class MainViewModel @Inject constructor(
 
     fun updateLocation(latitude: Double, longitude: Double) {
         _location.value = LocationData(latitude, longitude)
-        Log.e("SYNC DATA", "updateLocation   ---- > : "+longitude + " "+longitude )
+        Log.e("SYNC DATA", "updateLocation   ---- > : " + longitude + " " + longitude)
     }
 
 }

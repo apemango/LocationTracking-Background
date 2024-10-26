@@ -19,7 +19,7 @@ class PreferencesManager(private val context: Context) {
     }
 
     fun clear(){
-        sharedPreferences.edit().clear()
+        sharedPreferences.edit().clear().apply()
     }
 
     // Public method to edit preferences

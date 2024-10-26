@@ -8,6 +8,7 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.location.LocationManager
+import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
 import android.util.Log
@@ -22,12 +23,12 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.phone.tracker.data.local.PreferencesManager
-import com.phone.tracker.recevier.LocationService
+import com.phone.tracker.data.local.rememberPrefManager
+import com.phone.tracker.location.LocationService
+import com.phone.tracker.recevier.LocationServiceHello
 import com.phone.tracker.ui.AttendanceiHistory
 import com.phone.tracker.ui.componet.CircularProgressBar
 import com.phone.tracker.ui.home.HomeScreen
@@ -35,7 +36,6 @@ import com.phone.tracker.ui.home.MainViewModel
 import com.phone.tracker.ui.login.LoginActivity
 import com.phone.tracker.ui.theme.PotterComposeTheme
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.delay
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -52,6 +52,11 @@ class MainActivity : ComponentActivity() {
     override fun onDestroy() {
         super.onDestroy()
         unregisterReceiver(locationReceiver)
+    }
+
+    override fun onStart() {
+        super.onStart()
+//        startLocationService()
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -95,106 +100,73 @@ class MainActivity : ComponentActivity() {
                 val updateLocation by mainViewModel.location.collectAsState()
                 val trackingState by mainViewModel.tracking.collectAsState()
 
-                var isCheckInOutState = rememberSaveable() { mutableStateOf(false) }
-
-                var checkInId = remember { mutableStateOf("") }
-                var userId = remember { mutableStateOf(preferencesManager.userIdGet()) }
-                var isReadyCheckInOut by rememberSaveable { mutableStateOf(mainViewModel.tracking.value) }
+                val loading by mainViewModel.isLoading.collectAsState()
 
                 var isLoading = remember { mutableStateOf(false) }
-
                 isLoading.value.CircularProgressBar(onDismissRequest = { isLoading.value = false })
 
-                LaunchedEffect(
-                    updateLocation,
-                    mainViewModel.checkInState.collectAsState(),
-                    checkOutState,
-                    trackingState
-                ) {
-
-                    isCheckInOutState.value = trackingState
-
-                    Log.e("Checking details --> ", "onCreate: " + checkInState.checkIn.toString())
-
-                    if (checkOutState.status != 0) {
-                        delay(2000)
-                        isLoading.value = false
+                LaunchedEffect(checkInState, checkOutState, loading) {
+                    isLoading.value = loading
+                    if (checkInState.checkIn.isNotEmpty()) {
+                        Log.e("check", "NETWORK CALL onCreate: checkInState " + checkInState)
+                        startLocationService()
                     }
 
-                    if (!checkInState.checkIn.isNullOrEmpty()) {
-                        delay(2000)
-                        checkInId.value = checkInState.checkIn.first().checkInId
-                        userId.value = checkInState.checkIn.first().checkInId
-                        preferencesManager.saveCheckIn(checkInState.checkIn.first().checkInId)
-                        isLoading.value = false
-
+                    if (checkOutState.checkOut.isNotEmpty()) {
+                        Log.e("check", "Checkout state ::: " + checkOutState.toString())
+                        stopLocationService()
                     }
-
-                    if (checkOutState.status != 0) {
-                        preferencesManager.trackingStatus(false)
-
-                    }
-
-                    isReadyCheckInOut =
-                        updateLocation.latitude != 0.0 && updateLocation.longitude != 0.0
                 }
 
-                HomeScreen(preferencesManager,
-                    checkInState.checkIn,
-                    longitude = updateLocation.longitude, latitude = updateLocation.latitude,
-                    context = this,
-                    isCheckedIn = isCheckInOutState.value,
-                    onCheckIn = {
-                        checkLocationPermission()
-                        Log.e("TAG", "onCreate: status live --- > " + isCheckInOutState.value)
-                        if (updateLocation.latitude != 0.0 && updateLocation.longitude != 0.0) {
-                            isLoading.value = true
-                            mainViewModel.checkIn(
-                                preferencesManager.userIdGet().toLong(),
-                                updateLocation.latitude,
-                                updateLocation.longitude,
-                                "Delhi"
+                var pref = rememberPrefManager()
+
+                HomeScreen(updateLocation, checkInState, trackingState, onCheckIn = {
+                    checkLocationPermission()
+                    checkGpsAndStartService()
+
+                    mainViewModel.checkIn(
+                        pref.userIdGet().toLong(),
+                        updateLocation.latitude,
+                        updateLocation.longitude,
+                        "UP"
+                    )
+
+                }, onCheckOut = {
+
+                    checkLocationPermission()
+                    if (checkGpsAndStartService()) {
+                        if (updateLocation.longitude != 0.0 && updateLocation.latitude != 0.0) {
+                            mainViewModel.checkOut(
+                                pref.userIdGet().toLong(),
+                                pref.getCheckIn().toLong(),
+                                updateLocation.latitude.toString(),
+                                updateLocation.longitude.toString(),
+                                "Up",
+                                "10"
                             )
                         } else {
                             Toast.makeText(
                                 this,
-                                "Please retry location not getting properly ",
+                                "please retry not detecting your location",
                                 Toast.LENGTH_SHORT
                             ).show()
                         }
-                    },
-                    onCheckOut = {
-                        checkLocationPermission()
-                        if (updateLocation.latitude != 0.0 && updateLocation.longitude != 0.0) {
-                            isLoading.value = true
-                            try {
-                                mainViewModel.checkOut(
-                                    preferencesManager.userIdGet().toLong(),
-                                    preferencesManager.getCheckIn().toLong(),
-                                    updateLocation.latitude.toString(),
-                                    updateLocation.longitude.toString(), "NSB", "23"
-                                )
-                            } catch (e: Exception) {
-                                Log.e("CHECK IN ERROR", " checkin error  " + e.message)
-                            }
-
-                            mainViewModel.trackingOnOff()
-                            stopLocationService(this)
-
-                        } else {
-                            Toast.makeText(
-                                this,
-                                "Please retry location not getting properly ",
-                                Toast.LENGTH_SHORT
-                            ).show()
-                        }
-                    },
-                    showHistory = {
-                        this.startActivity(Intent(this, AttendanceiHistory::class.java))
-                    }, logout = {
-                        this.startActivity(Intent(this, LoginActivity::class.java))
                     }
-                )
+                }, history = {
+                    startActivity(Intent(this, AttendanceiHistory::class.java))
+                }, logout = {
+                    preferencesManager.clear()
+                    startActivity(Intent(this, LoginActivity::class.java))
+                }, detectLocation = {
+                    checkLocationPermission()
+                    if(checkGpsAndStartService()){
+                        val context = this
+                        Intent(context, LocationService::class.java).apply {
+                            action = LocationService.ACTION_SERVICE_START
+                            context.startService(this)
+                        }
+                    }
+                })
             }
         }
     }
@@ -222,16 +194,16 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    private fun checkGpsAndStartService() {
+    private fun checkGpsAndStartService(): Boolean {
         val locationManager = getSystemService(Context.LOCATION_SERVICE) as LocationManager
         if (!locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
             // Prompt user to enable GPS
             showGpsEnableDialog()
+            return false
         } else {
             // Start the location service if GPS is enabled
             startLocationService()
-            mainViewModel.trackingOnOff()
-//            isCheckedIn = true
+            return true
         }
     }
 
@@ -260,13 +232,23 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun startLocationService() {
-        val intent = Intent(this, LocationService::class.java)
-        ContextCompat.startForegroundService(this, intent)
+        val context = this
+        Intent(context, LocationService::class.java).apply {
+            action = LocationService.ACTION_SERVICE_START
+            context.startService(this)
+        }
+        mainViewModel.trackingOnOff(true)
     }
 
-    private fun stopLocationService(context: Context) {
-        val intent = Intent(context, LocationService::class.java)
-        context.stopService(intent)
+    private fun stopLocationService() {
+        val context = this
+        Intent(context, LocationService::class.java).apply {
+            action = LocationService.ACTION_SERVICE_STOP
+            context.startService(this)
+        }
+
+        mainViewModel.trackingOnOff(false)
     }
+
 }
 

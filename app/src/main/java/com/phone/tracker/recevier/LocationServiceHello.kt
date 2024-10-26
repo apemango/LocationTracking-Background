@@ -12,7 +12,6 @@ import android.os.Build
 import android.os.IBinder
 import android.os.Looper
 import android.util.Log
-import android.widget.RemoteViews
 import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
 import com.phone.tracker.data.local.PreferencesManager
@@ -33,7 +32,7 @@ import java.util.TimerTask
 import javax.inject.Inject
 
 @AndroidEntryPoint
-class LocationService : Service() {
+class LocationServiceHello : Service() {
 
     @Inject
     lateinit var apiService: ApiEndPoints
@@ -67,10 +66,10 @@ class LocationService : Service() {
             override fun onLocationResult(locationResult: LocationResult) {
                 for (location in locationResult.locations) {
                     Log.d(
-                        "LocationService",
+                        "LocationServiceHello",
                         "Latitude: ${location.latitude}, Longitude: ${location.longitude}"
                     )
-                    updateNotification(location.latitude, location.longitude)
+//                    updateNotification(location.latitude, location.longitude)
 
                     preferencesManager.saveLocation(location.latitude, location.longitude)
 
@@ -111,7 +110,7 @@ class LocationService : Service() {
                     )
                 }
             } catch (e: Exception) {
-                Log.e("LocationService", "Error uploading location", e)
+                Log.e("LocationServiceHello", "Error uploading location", e)
             }
         }
     }
@@ -142,11 +141,8 @@ class LocationService : Service() {
                             sendBroadcast(intent)
 
                             preferencesManager.saveLocation(location.latitude, location.longitude)
-                            Log.d(
-                                "LocationService",
-                                "Forced Update - Latitude: ${location.latitude}, Longitude: ${location.longitude}"
-                            )
-                            updateNotification(location.latitude, location.longitude)
+                            Log.d("LocationServiceHello","Forced Update - Latitude: ${location.latitude}, Longitude: ${location.longitude}")
+//                            updateNotification(location.latitude, location.longitude)
                         }
                     }
                 }
@@ -181,7 +177,7 @@ class LocationService : Service() {
                 Looper.getMainLooper()
             )
         } else {
-            Log.e("LocationService", "Permissions not granted")
+            Log.e("LocationServiceHello", "Permissions not granted")
         }
     }
 
@@ -190,18 +186,18 @@ class LocationService : Service() {
             fusedLocationClient.lastLocation.addOnSuccessListener { location ->
                 if (location != null) {
                     Log.d(
-                        "LocationService",
+                        "LocationServiceHello",
                         "Last Known Latitude: ${location.latitude}, Longitude: ${location.longitude}"
                     )
                     updateNotification(location.latitude, location.longitude)
                 } else {
-                    Log.e("LocationService", "Last known location is null")
+                    Log.e("LocationServiceHello", "Last known location is null")
                 }
             }.addOnFailureListener { e ->
-                Log.e("LocationService", "Failed to get last known location", e)
+                Log.e("LocationServiceHello", "Failed to get last known location", e)
             }
         } else {
-            Log.e("LocationService", "Permissions not granted")
+            Log.e("LocationServiceHello", "Permissions not granted")
         }
     }
 
@@ -246,7 +242,7 @@ class LocationService : Service() {
         }
 
         // Create an Intent to stop the service with FLAG_IMMUTABLE for compatibility.
-        val stopIntent = Intent(this, LocationService::class.java).apply {
+        val stopIntent = Intent(this, LocationServiceHello::class.java).apply {
             action = ACTION_STOP_SERVICE
         }
 
